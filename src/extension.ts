@@ -1,35 +1,34 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-let openTime: number | null = null;  // Время открытия файла
-let activeFile: string | null = null; // Активный файл
+let openTime: number | null = null;  // Время открытия
+let activeFile: string | null = null; // Имя файла
 let statusBarItem: vscode.StatusBarItem;
 
-// Активация расширения
 export function activate(context: vscode.ExtensionContext) {
 
-    // Создаем элемент статусной строки
+    // статусная строка
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     context.subscriptions.push(statusBarItem);
 
-    // Слушатель на изменение активного редактора
+    // смотрю активный редактор
     vscode.window.onDidChangeActiveTextEditor(editor => {
         if (editor && editor.document) {
             if (openTime !== null && activeFile) {
                 logTimeSpent(path.basename(activeFile), Date.now() - openTime);
             }
 
-            // Установка времени открытия нового файла
+            // время открытия
             openTime = Date.now();
             activeFile = editor.document.fileName;
         } else {
-            // Если редактор был закрыт
+            // если не открыт файл
             openTime = null;
             activeFile = null;
         }
     });
 
-    // Команда для отображения времени, проведенного с файлом
+    // отображение времени
     let showTimeCommand = vscode.commands.registerCommand('fileTimeTracker.showTime', () => {
         const editor = vscode.window.activeTextEditor;
         
@@ -37,11 +36,10 @@ export function activate(context: vscode.ExtensionContext) {
             let timeSpent = Date.now() - openTime;
             showStatusMessage(`Время проведённое в ${path.basename(activeFile)}: ${formatTime(timeSpent)}`, 5000); // Сообщение на 5 секунд
         } else {
-            showNoFileMessage(); // Показываем сообщение, если файл не открыт
+            showNoFileMessage(); // сообщение если файл не открыт
         }
     });
 
-    // Добавление команды в контекст
     context.subscriptions.push(showTimeCommand);
 }
 
@@ -50,13 +48,13 @@ function showStatusMessage(message: string, duration: number) {
     statusBarItem.text = message;
     statusBarItem.show();
 
-    // Убираем сообщение через заданное время
+    // Убираю сообщение через заданное время
     setTimeout(() => {
         statusBarItem.hide();
     }, duration);
 }
 
-// Функция для показа сообщения, если нет активного файла
+// Функция для показа сообщения если файл не открыт
 function showNoFileMessage() {
     showStatusMessage("Файл не был открыт", 5000); // Сообщение на 5 секунд
 }
@@ -71,12 +69,10 @@ function formatTime(ms: number): string {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// Логирование времени, проведенного с файлом
 function logTimeSpent(fileName: string, timeSpent: number) {
     console.log(`Время проведённое в ${fileName}: ${formatTime(timeSpent)}`);
 }
 
-// Деактивация расширения
 export function deactivate() {
     if (openTime !== null && activeFile) {
         let timeSpent = Date.now() - openTime;
